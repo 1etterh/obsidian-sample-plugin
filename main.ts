@@ -1,4 +1,4 @@
-// twinkle-graph/main.ts (별자리 느낌 구현: 위상 랜덤 반짝임 + 균일한 크기 + 후광)
+// twinkle-graph/main.ts (별자리 느낌 구현: 천천히 부드러운 반짝임 + 후광)
 import { Plugin, WorkspaceLeaf } from "obsidian";
 
 export default class TwinkleGraphPlugin extends Plugin {
@@ -70,9 +70,9 @@ export default class TwinkleGraphPlugin extends Plugin {
 
 					const alpha =
 						0.4 +
-						0.6 * Math.abs(Math.sin(time / 150 + node._phase));
+						0.6 * Math.abs(Math.sin(time / 800 + node._phase));
 					const scale =
-						0.9 + 0.1 * Math.sin(time / 200 + node._phase); // 기본 크기에서 크게 벗어나지 않음
+						0.95 + 0.05 * Math.sin(time / 1200 + node._phase); // 느리고 작게 변화
 
 					if (node.circle) {
 						node.circle.alpha = alpha;
