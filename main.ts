@@ -1,4 +1,4 @@
-// twinkle-graph/main.ts (별자리 느낌 구현: 작고 천천히 반짝이는 노드 + 후광)
+// twinkle-graph/main.ts (별자리 느낌 구현: 노드 크기를 기본의 1/10로 축소 + 천천히 반짝임 + 후광)
 import { Plugin, WorkspaceLeaf } from "obsidian";
 
 export default class TwinkleGraphPlugin extends Plugin {
@@ -72,7 +72,7 @@ export default class TwinkleGraphPlugin extends Plugin {
 						0.4 +
 						0.6 * Math.abs(Math.sin(time / 800 + node._phase));
 					const scale =
-						0.3 + 0.05 * Math.sin(time / 1200 + node._phase); // 작고 천천히 변화
+						0.1 + 0.01 * Math.sin(time / 1200 + node._phase); // 1/10 크기로 축소
 
 					if (node.circle) {
 						node.circle.alpha = alpha;
