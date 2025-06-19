@@ -1,4 +1,4 @@
-// twinkle-graph/main.ts (Living Graph 기반 반짝이 효과 + 강제 탐색 기반 디버깅 + 최종 확정된 px 접근)
+// twinkle-graph/main.ts (별자리 느낌 구현: 위상 랜덤 반짝임 + 균일한 크기 + 후광)
 import { Plugin, WorkspaceLeaf } from "obsidian";
 
 export default class TwinkleGraphPlugin extends Plugin {
@@ -28,11 +28,13 @@ export default class TwinkleGraphPlugin extends Plugin {
 			},
 		});
 
+		this.injectStyle();
 		this.startEffect();
 	}
 
 	onunload() {
 		this.clearEffect();
+		this.removeStyle();
 		console.log("🌙 TwinkleGraphPlugin unloaded");
 	}
 
@@ -51,55 +53,34 @@ export default class TwinkleGraphPlugin extends Plugin {
 				const view: any = leaf.view;
 				const renderer = view?.renderer;
 
-				if (!renderer) {
-					console.warn(`⚠️ [Leaf ${leafIndex}] No renderer found.`);
-					return;
-				}
+				if (!renderer) return;
 
-				const rendererKeys = Object.keys(renderer);
-				console.log(
-					`🔍 [Leaf ${leafIndex}] Renderer keys:`,
-					rendererKeys
-				);
-
-				// 확정된 Pixi 객체 경로: 'px'
 				const pixiApp = renderer.px;
-				if (!pixiApp?.renderer || !pixiApp?.stage) {
-					console.warn(
-						`❌ [Leaf ${leafIndex}] 'px' does not contain valid renderer/stage.`
-					);
-					console.dir(pixiApp);
-					return;
-				}
+				if (!pixiApp?.renderer || !pixiApp?.stage) return;
 
-				// 노드 탐색
-				let nodes = renderer.nodes;
-				if (!nodes || !Array.isArray(nodes)) {
-					console.warn(
-						`⚠️ [Leaf ${leafIndex}] nodes array not found in renderer.`
-					);
-					return;
-				}
+				const nodes = renderer.nodes;
+				if (!nodes || !Array.isArray(nodes)) return;
 
 				const time = Date.now();
-				nodes.forEach((node: any, i: number) => {
-					const alpha = 0.6 + 0.4 * Math.sin(time / 400 + node.index);
+				nodes.forEach((node: any) => {
+					if (!node._twinkleInit) {
+						node._phase = Math.random() * Math.PI * 2;
+						node._twinkleInit = true;
+					}
+
+					const alpha =
+						0.4 +
+						0.6 * Math.abs(Math.sin(time / 150 + node._phase));
+					const scale =
+						0.9 + 0.1 * Math.sin(time / 200 + node._phase); // 기본 크기에서 크게 벗어나지 않음
+
 					if (node.circle) {
 						node.circle.alpha = alpha;
-					} else {
-						console.warn(
-							`⚠️ [Leaf ${leafIndex}] Node ${i} missing 'circle' property.`
-						);
-						console.dir(node);
+						node.circle.scale.set(scale, scale);
 					}
 				});
 
 				pixiApp.renderer.render(pixiApp.stage);
-				console.log(
-					`✅ [Leaf ${leafIndex}] Rendered at ${new Date().toISOString()} with ${
-						nodes.length
-					} nodes.`
-				);
 			});
 		}, 40);
 	}
@@ -110,5 +91,30 @@ export default class TwinkleGraphPlugin extends Plugin {
 			this.intervalId = null;
 			console.log("🧹 Twinkle effect cleared");
 		}
+	}
+
+	injectStyle() {
+		const styleId = "twinkle-graph-style";
+		if (document.getElementById(styleId)) return;
+
+		const style = document.createElement("style");
+		style.id = styleId;
+		style.textContent = `
+      .graph-view .node circle {
+        filter:
+          drop-shadow(0 0 2px #ffffff)
+          drop-shadow(0 0 4px #88ccff)
+          drop-shadow(0 0 6px rgba(255, 255, 255, 0.5))
+          blur(0.5px);
+        transform-origin: center center;
+        transition: filter 0.2s ease-in-out;
+      }
+    `;
+		document.head.appendChild(style);
+	}
+
+	removeStyle() {
+		const existing = document.getElementById("twinkle-graph-style");
+		if (existing) existing.remove();
 	}
 }
